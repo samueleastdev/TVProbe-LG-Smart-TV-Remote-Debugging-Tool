@@ -25,7 +25,7 @@ Get the correct IP to use on the Pi with this command
 ```bash
 sudo zerotier-cli listnetworks
 200 listnetworks <nwid> <name> <mac> <status> <type> <dev> <ZT assigned ips>
-200 listnetworks (id) modest_felsenstein (mac) OK PRIVATE ztcfw6agkx (ip)/16
+200 listnetworks (id) modest_felsenstein (mac) OK PRIVATE (id) (ip)/16
 ```
 
 -   They will now be able to connect and should see the camera
