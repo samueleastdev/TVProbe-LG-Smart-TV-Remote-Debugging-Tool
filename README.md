@@ -1,5 +1,7 @@
 # TVProbe Smart TV Remote Debugging
 
+![TVProbe Logo](https://s3.us-east-1.amazonaws.com/s3b-delivery-bucket/screenshot_2025_11_01_at_12.41.08.png)
+
 # Starting the webcam
 
 ```bash
