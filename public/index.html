@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="icon" href="/favicon.ico" />
+        <link href="/styles.css" rel="stylesheet" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js"></script>
+        <script src="/script.js" defer></script>
+        <title>LG Remote Debugger</title>
+    </head>
+    <body class="bg-gray-900 text-white">
+        <nav class="bg-gray-800 p-4 flex justify-between items-center">
+            <div class="text-xl font-bold">LG Remote Debugger</div>
+            <div class="flex items-center gap-4">
+                <span
+                    id="connectionStatus"
+                    class="px-3 py-1 rounded-full text-sm bg-gray-700"
+                ></span>
+                <button
+                    id="openRemoteBtn"
+                    class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-sm"
+                >
+                    Remote
+                </button>
+                <button
+                    id="openSettingsBtn"
+                    class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md text-sm"
+                >
+                    Settings
+                </button>
+            </div>
+        </nav>
+
+        <div
+            id="locationAlert"
+            class="hidden bg-blue-500 text-white p-4 text-center"
+        ></div>
+
+        <div class="container-fluid mx-auto mt-4 p-4">
+            <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                <div id="debugUrlAlert" class="hidden debug-alert">
+                    <div class="debug-alert-inner">
+                        <span id="debugAlertText"></span>
+                        <button id="closeDebugAlert">Close</button>
+                    </div>
+                </div>
+                <iframe
+                    id="videoIframe"
+                    src=""
+                    class="w-full aspect-video rounded-t-lg"
+                    frameborder="0"
+                    allowfullscreen
+                ></iframe>
+
+                <div class="p-4 border-t border-gray-700">
+                    <h2 class="text-lg font-semibold mb-2">Command Output</h2>
+                    <pre
+                        id="output"
+                        class="p-4 bg-gray-900 text-green-400 rounded-lg overflow-y-auto"
+                        style="font-size: 13px; height: 300px"
+                    ></pre>
+                </div>
+            </div>
+        </div>
+
+        <div id="remoteContainer" class="floating-remote hidden">
+            <div class="remote">
+                <div class="top-row">
+                    <button data-cmd="POWER" class="btn power">⏻</button>
+                    <button data-cmd="SETTINGS" class="btn">⚙️</button>
+                    <button data-cmd="PLAY" class="btn">▶️</button>
+                    <button data-cmd="CAST" class="btn">📡</button>
+                </div>
+
+                <div class="nav">
+                    <button data-cmd="UP" class="btn arrow">▲</button>
+                    <div class="mid">
+                        <button data-cmd="LEFT" class="btn arrow">◀</button>
+                        <button data-cmd="ENTER" class="btn ok">OK</button>
+                        <button data-cmd="RIGHT" class="btn arrow">▶</button>
+                    </div>
+                    <button data-cmd="DOWN" class="btn arrow">▼</button>
+                </div>
+
+                <div class="side-controls">
+                    <button data-cmd="BACK" class="btn small">↩</button>
+                    <button data-cmd="HOME" class="btn small">🏠</button>
+                    <button data-cmd="EXIT" class="btn small">⛔</button>
+                </div>
+
+                <div class="vol-ch">
+                    <button data-cmd="VOLUMEUP" class="btn">Vol +</button>
+                    <button data-cmd="VOLUMEDOWN" class="btn">Vol −</button>
+                    <button data-cmd="CHANNELUP" class="btn">Ch +</button>
+                    <button data-cmd="CHANNELDOWN" class="btn">Ch −</button>
+                </div>
+
+                <div class="color-row">
+                    <button data-cmd="RED" class="btn red"></button>
+                    <button data-cmd="GREEN" class="btn green"></button>
+                    <button data-cmd="YELLOW" class="btn yellow"></button>
+                    <button data-cmd="BLUE" class="btn blue"></button>
+                </div>
+
+                <div class="numbers">
+                    <button data-cmd="1" class="btn">1</button>
+                    <button data-cmd="2" class="btn">2</button>
+                    <button data-cmd="3" class="btn">3</button>
+                    <button data-cmd="4" class="btn">4</button>
+                    <button data-cmd="5" class="btn">5</button>
+                    <button data-cmd="6" class="btn">6</button>
+                    <button data-cmd="7" class="btn">7</button>
+                    <button data-cmd="8" class="btn">8</button>
+                    <button data-cmd="9" class="btn">9</button>
+                    <button data-cmd="0" class="btn zero">0</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="settingsModal" class="modal hidden">
+            <div class="modal-box settings-box">
+                <button id="closeSettingsBtn" class="modal-close-text">
+                    Close
+                </button>
+                <h2 class="modal-title">Device Settings</h2>
+
+                <div class="form-section">
+                    <label for="passphrase">Passphrase</label>
+                    <div class="input-group">
+                        <input
+                            id="passphrase"
+                            type="text"
+                            placeholder="Enter your passphrase"
+                        />
+                        <button id="submitPassphrase" class="btn-primary">
+                            Submit
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3 class="section-title">Device Actions</h3>
+                    <div class="button-row">
+                        <button id="openDevApp" class="btn-success">
+                            Open Dev App
+                        </button>
+                        <button id="submitDeviceInfo" class="btn-primary">
+                            Show Info
+                        </button>
+                        <button id="stopProcess" class="btn-danger">
+                            Stop Process
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label for="appUrlInput">App Build URL</label>
+                    <div class="input-group">
+                        <input
+                            id="appUrlInput"
+                            type="text"
+                            placeholder="Enter app build URL"
+                        />
+                        <button id="appUrl" class="btn-primary">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

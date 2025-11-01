@@ -1,0 +1,12 @@
+{
+  "id": "remote-dev",
+  "version": "1.0.0",
+  "vendor": "Remote",
+  "type": "web",
+  "main": "index.html",
+  "title": "remote-dev",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "resolution": "1280x720",
+  "disableBackHistoryAPI": true
+}
