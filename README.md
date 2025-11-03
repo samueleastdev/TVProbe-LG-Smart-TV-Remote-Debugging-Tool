@@ -8,7 +8,7 @@ TVProbe allows developers to remotely debug and control Smart TVs (LG, Samsung, 
 
 ## Starting the Webcam
 
-1. Open the `cam/mediamtx.yml` file and edit the last line to match your connected camera.  
+1. Open the `cam/mediamtx.yml` file and edit the last line to match your connected camera. https://mediamtx.org/docs/usage/publish
    Example FFmpeg command:
 
     ```bash
