@@ -86,9 +86,23 @@ const runSSHCommandWithInput = async (command, input = null) => {
             }
 
             if (input && message.toLowerCase().includes('input passphrase')) {
-                message = `🔑 Sending passphrase...`
+                message = '🔑 Sending passphrase...'
                 broadcastLog(message)
-                runningProcess.stdin.write(`${input}\n`)
+
+                if (runningProcess && runningProcess.stdin) {
+                    try {
+                        runningProcess.stdin.write(`${input}\n`)
+                    } catch (err) {
+                        console.error(
+                            '[SSH Service] Failed to write passphrase:',
+                            err
+                        )
+                    }
+                } else {
+                    console.warn(
+                        '[SSH Service] Cannot send passphrase, process not running.'
+                    )
+                }
             }
         })
 

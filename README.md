@@ -35,6 +35,19 @@ TVProbe allows developers to remotely debug and control Smart TVs (LG, Samsung, 
 
 ---
 
+## Install WebOS Devtools CLI
+
+    ```bash
+    npm install -g @webos-tools/cli
+    ```
+
+# verify
+
+    ```bash
+    ares --version
+    ares-package --help
+    ```
+
 ## Setting Up Zerotier
 
 1. Go to [zerotier.com](https://www.zerotier.com) and create a free account.  
