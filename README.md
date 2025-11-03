@@ -41,7 +41,7 @@ TVProbe allows developers to remotely debug and control Smart TVs (LG, Samsung, 
 npm install -g @webos-tools/cli
 ```
 
-# verify
+1. verify
 
 ```bash
 ares --version
