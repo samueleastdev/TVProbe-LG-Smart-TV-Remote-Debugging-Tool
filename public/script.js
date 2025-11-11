@@ -216,6 +216,7 @@ submitBuildApp.addEventListener('click', async () => {
                     result.message || 'App built successfully!'
                 }\nApp ID: ${appName}`
             )
+            location.reload()
         } else {
             alert(`Failed: ${result.error}`)
         }
