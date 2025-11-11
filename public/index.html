@@ -29,6 +29,12 @@
                 >
                     Settings
                 </button>
+                <button
+                    id="openBuildAppBtn"
+                    class="bg-yellow-600 hover:bg-yellow-700 px-3 py-1 rounded-md text-sm"
+                >
+                    Build App
+                </button>
             </div>
         </nav>
 
@@ -45,6 +51,7 @@
                         <button id="closeDebugAlert">Close</button>
                     </div>
                 </div>
+
                 <iframe
                     id="videoIframe"
                     src=""
@@ -52,6 +59,13 @@
                     frameborder="0"
                     allowfullscreen
                 ></iframe>
+
+                <div
+                    id="ipkList"
+                    class="flex flex-wrap gap-3 p-3 bg-gray-900 border-t border-b border-gray-700"
+                >
+                    <p>Loading IPK files...</p>
+                </div>
 
                 <div class="p-4 border-t border-gray-700">
                     <h2 class="text-lg font-semibold mb-2">Command Output</h2>
@@ -153,17 +167,42 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div id="buildAppModal" class="modal hidden">
+            <div class="modal-box settings-box">
+                <button id="closeBuildAppBtn" class="modal-close-text">
+                    Close
+                </button>
+                <h2 class="modal-title">Build New App</h2>
 
                 <div class="form-section">
-                    <label for="appUrlInput">App Build URL</label>
+                    <label for="buildAppName">App Name</label>
                     <div class="input-group">
                         <input
-                            id="appUrlInput"
+                            id="buildAppName"
+                            type="text"
+                            placeholder="Enter app name"
+                        />
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label for="buildAppUrl">App Build URL</label>
+                    <div class="input-group">
+                        <input
+                            id="buildAppUrl"
                             type="text"
                             placeholder="Enter app build URL"
                         />
-                        <button id="appUrl" class="btn-primary">Submit</button>
                     </div>
+                </div>
+
+                <div class="form-section">
+                    <button id="submitBuildApp" class="btn-primary w-full">
+                        Submit Build
+                    </button>
                 </div>
             </div>
         </div>

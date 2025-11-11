@@ -29,3 +29,6 @@ coverage/
 # Ignore dependency lockfiles
 package-lock.json
 yarn.lock
+
+# Ignore all .ipk files
+*.ipk

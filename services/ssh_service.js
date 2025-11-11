@@ -30,6 +30,47 @@ const sendCommandDevice = (command, res) => {
     })
 }
 
+const getAppId = async (ipkPath, input = null) => {
+    return new Promise((resolve, reject) => {
+        if (runningProcess) {
+            console.log('⚠️ Another process is already running. Stop it first!')
+            runningProcess.kill('SIGTERM')
+            runningProcess = null
+        }
+
+        const cmd = `
+            path=$(ar p "${ipkPath}" data.tar.gz | tar -tzf - | grep appinfo.json) &&
+            ar p "${ipkPath}" data.tar.gz | tar -xzOf - "$path" | grep '"id"' | cut -d '"' -f4
+        `
+
+        runningProcess = exec(cmd, (error, stdout, stderr) => {
+            runningProcess = null
+
+            if (error) {
+                console.error(
+                    `❌ Error extracting app ID: ${stderr || error.message}`
+                )
+                return reject(new Error('Failed to extract app ID'))
+            }
+
+            const appId = stdout.trim()
+
+            if (!appId) {
+                console.warn('⚠️ No app ID found in appinfo.json')
+                return reject(new Error('No app ID found'))
+            }
+
+            console.log(`✅ Extracted app ID: ${appId}`)
+            resolve(appId)
+        })
+
+        if (input) {
+            runningProcess.stdin.write(input)
+            runningProcess.stdin.end()
+        }
+    })
+}
+
 const runSSHCommandWithInput = async (command, input = null) => {
     return new Promise((resolve, reject) => {
         if (runningProcess) {
@@ -146,6 +187,7 @@ module.exports = {
     checkConnection,
     sendCommandDevice,
     runSSHCommandWithInput,
+    getAppId,
     stopProcess,
     broadcastLog,
     delay,

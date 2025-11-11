@@ -2,16 +2,20 @@ const express = require('express')
 const router = express.Router()
 const {
     runDevApp,
+    runCreateDebugApp,
     runInstallApp,
     openDevApp,
+    getIpkList,
     getDeviceStats,
     getDeviceInfo,
 } = require('../services/lg_service')
 const { stopProcess } = require('../services/ssh_service')
 
 router.get('/get_device_stats', getDeviceStats)
+router.get('/get_ipks', getIpkList)
 router.post('/run_dev_app', runDevApp)
 router.post('/run_install_app', runInstallApp)
+router.post('/run_create_debug_app', runCreateDebugApp)
 router.post('/open_dev_app', openDevApp)
 router.post('/get_device_info', getDeviceInfo)
 router.post('/stop_process', stopProcess)

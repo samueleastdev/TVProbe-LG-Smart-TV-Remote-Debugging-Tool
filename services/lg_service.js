@@ -1,4 +1,4 @@
-const { runSSHCommandWithInput, delay } = require('./ssh_service.js')
+const { runSSHCommandWithInput, getAppId, delay } = require('./ssh_service.js')
 const { getPointerSocket, lgtv } = require('./lg_connection.js')
 const { broadcastLog } = require('./websocket_service.js')
 const { sendButton } = require('../utils/helpers')
@@ -29,12 +29,12 @@ async function runDevApp(req, res) {
 
         await delay(6000)
 
-        await sendButton(sock, 'UP')
+        /*await sendButton(sock, 'UP')
         await sendButton(sock, 'UP')
         await sendButton(sock, 'UP')
         await sendButton(sock, 'UP')
         await sendButton(sock, 'DOWN', 1000)
-        await sendButton(sock, 'ENTER', 2000)
+        await sendButton(sock, 'ENTER', 2000)*/
 
         broadcastLogs('🔑 Turn on key server...')
         await runSSHCommandWithInput(`ares-setup-device --reset`)
@@ -89,42 +89,101 @@ function broadcastLogs(text) {
     })
 }
 
-async function updateIndexHtml(newUrl) {
+async function updateIndexHtml(newUrl, newAppId = null) {
     try {
-        const filePath = path.resolve(__dirname, '../tvapp/index.html')
-        const newContent = `<!DOCTYPE html>
+        const htmlPath = path.resolve(__dirname, '../tvapp/index.html')
+        const htmlContent = `<!DOCTYPE html>
 <html>
     <script>
-            location.href = '${newUrl}';
+        location.href = '${newUrl}';
     </script>
 </html>`
-        console.log('[Debug] newContent', newContent)
-        await fs.writeFile(filePath, newContent, 'utf-8')
-        console.log('[Success] Updated index.html successfully.')
+
+        await fs.writeFile(htmlPath, htmlContent, 'utf-8')
+        const appInfoPath = path.resolve(__dirname, '../tvapp/appinfo.json')
+        const appInfoRaw = await fs.readFile(appInfoPath, 'utf-8')
+        const appInfo = JSON.parse(appInfoRaw)
+
+        if (!newAppId) {
+            try {
+                const urlObj = new URL(newUrl)
+                const hostName = urlObj.hostname.replace(/\./g, '-')
+                newAppId = `${hostName}-app`
+            } catch {
+                newAppId = `remote-dev-${Date.now()}`
+            }
+        }
+
+        appInfo.id = newAppId
+        appInfo.title = newAppId
+
+        await fs.writeFile(
+            appInfoPath,
+            JSON.stringify(appInfo, null, 2),
+            'utf-8'
+        )
     } catch (error) {
-        console.error('Error updating index.html:', error)
+        console.error('❌ Error updating files:', error)
         throw error
     }
 }
 
-async function runInstallApp(req, res) {
+async function runCreateDebugApp(req, res) {
     const url = req.body.url
     if (!url) {
         return res.status(400).json({ error: 'Passphrase is required' })
     }
 
+    const name = req.body.name
+    if (!name) {
+        return res.status(400).json({ error: 'Name is required' })
+    }
+
     try {
         broadcastLog('🔧 Updating app index.html...')
-        await updateIndexHtml(url)
+        await updateIndexHtml(url, name)
 
         const tvAppPath = path.resolve(__dirname, '../tvapp/')
         broadcastLog(`📦 Packaging app in ${tvAppPath}`)
 
-        // Run ares-package inside the tvapp directory
         await runSSHCommandWithInput(`cd ${tvAppPath} && ares-package .`)
 
         res.status(200).json({
             message: 'App packaged successfully, you can now run it below.',
+        })
+    } catch (error) {
+        console.error(`Error executing command: ${error.message}`)
+        res.status(500).json({
+            error: `Failed to execute command: ${error.message}`,
+        })
+    }
+}
+
+async function runInstallApp(req, res) {
+    const filePath = req.body.filePath
+    if (!filePath) {
+        return res.status(400).json({ error: 'File path is required' })
+    }
+
+    try {
+        console.log('Installing app from:', filePath)
+
+        broadcastLog(`📦 Packaging app in ${filePath}`)
+
+        await runSSHCommandWithInput(
+            `ares-install --device ${LG.DEVICE_NAME} '${filePath}'`
+        )
+
+        const id = await getAppId(filePath)
+
+        console.log('Installed app ID:', id)
+
+        await runSSHCommandWithInput(
+            `ares-inspect --device ${LG.DEVICE_NAME} '${id}'`
+        )
+
+        res.status(200).json({
+            message: `App packaged successfully, you can now run it below. ${id}`,
         })
     } catch (error) {
         console.error(`Error executing command: ${error.message}`)
@@ -224,10 +283,42 @@ const getDeviceInfo = async (req, res) => {
     }
 }
 
+const getIpkList = async (req, res) => {
+    try {
+        const ipksFolder = path.resolve(__dirname, '../tvapp')
+        const files = await fs.readdir(ipksFolder)
+
+        const ipkFiles = files
+            .filter((file) => file.endsWith('.ipk'))
+            .map((file) => ({
+                name: file,
+                path: path.join(ipksFolder, file),
+            }))
+
+        if (ipkFiles.length === 0) {
+            return res
+                .status(404)
+                .json({ message: 'No .ipk files found in /ipks folder.' })
+        }
+
+        res.status(200).json({
+            count: ipkFiles.length,
+            files: ipkFiles,
+        })
+    } catch (error) {
+        console.error(`Error reading ipk folder: ${error.message}`)
+        res.status(500).json({
+            error: `Failed to read ipk folder: ${error.message}`,
+        })
+    }
+}
+
 module.exports = {
     runDevApp,
+    runCreateDebugApp,
     runInstallApp,
     openDevApp,
     getDeviceStats,
+    getIpkList,
     getDeviceInfo,
 }

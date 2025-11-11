@@ -11,8 +11,6 @@ const submitDeviceInfo = document.getElementById('submitDeviceInfo')
 const openDevApp = document.getElementById('openDevApp')
 const stopProcess = document.getElementById('stopProcess')
 const submitPassphrase = document.getElementById('submitPassphrase')
-const appUrl = document.getElementById('appUrl')
-const appUrlInput = document.getElementById('appUrlInput')
 
 const settingsModal = document.getElementById('settingsModal')
 const openSettingsBtn = document.getElementById('openSettingsBtn')
@@ -20,6 +18,11 @@ const closeSettingsBtn = document.getElementById('closeSettingsBtn')
 
 const remoteContainer = document.getElementById('remoteContainer')
 const openRemoteBtn = document.getElementById('openRemoteBtn')
+
+const buildAppModal = document.getElementById('buildAppModal')
+const openBuildAppBtn = document.getElementById('openBuildAppBtn')
+const closeBuildAppBtn = document.getElementById('closeBuildAppBtn')
+const submitBuildApp = document.getElementById('submitBuildApp')
 
 const savedPassphrase = localStorage.getItem('savedPassphrase')
 if (savedPassphrase) passphraseInput.value = savedPassphrase
@@ -143,6 +146,89 @@ document.addEventListener('mousemove', (e) => {
     }
 })
 
+openBuildAppBtn.addEventListener('click', () => {
+    console.log('Opening Build App Modal')
+    buildAppModal.classList.remove('hidden')
+    buildAppModal.classList.add('flex')
+})
+
+closeBuildAppBtn.addEventListener('click', () => {
+    buildAppModal.classList.add('hidden')
+    buildAppModal.classList.remove('flex')
+})
+
+buildAppModal.addEventListener('click', (e) => {
+    if (e.target === buildAppModal) {
+        buildAppModal.classList.add('hidden')
+        buildAppModal.classList.remove('flex')
+    }
+})
+
+submitBuildApp.addEventListener('click', async () => {
+    let appName = document.getElementById('buildAppName').value.trim()
+    const appUrl = document.getElementById('buildAppUrl').value.trim()
+
+    if (!appName || !appUrl) {
+        alert('Please enter both App Name and URL')
+        return
+    }
+
+    appName = appName
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+
+    if (!appName) {
+        alert('App name must contain at least one letter or number')
+        return
+    }
+
+    let validUrl = true
+    try {
+        const parsedUrl = new URL(appUrl)
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+            validUrl = false
+        }
+    } catch {
+        validUrl = false
+    }
+
+    if (!validUrl) {
+        alert('Please enter a valid URL starting with http:// or https://')
+        return
+    }
+
+    submitBuildApp.disabled = true
+    submitBuildApp.textContent = 'Building...'
+
+    try {
+        const res = await fetch('/lg/run_create_debug_app', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: appUrl, name: appName }),
+        })
+
+        const result = await res.json()
+        if (res.ok) {
+            alert(
+                `${
+                    result.message || 'App built successfully!'
+                }\nApp ID: ${appName}`
+            )
+        } else {
+            alert(`Failed: ${result.error}`)
+        }
+    } catch (err) {
+        alert(`Error building app: ${err.message}`)
+    } finally {
+        submitBuildApp.disabled = false
+        submitBuildApp.textContent = 'Submit Build'
+        buildAppModal.classList.add('hidden')
+        buildAppModal.classList.remove('flex')
+    }
+})
+
 openDevApp.addEventListener('click', () =>
     fetch('/lg/open_dev_app', { method: 'POST' })
         .then((res) => res.json())
@@ -165,18 +251,6 @@ submitPassphrase.addEventListener('click', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passphrase }),
     })
-})
-
-appUrl.addEventListener('click', () => {
-    const url = appUrlInput.value.trim()
-    if (!url) return alert('Please enter an app URL!')
-    fetch('/lg/run_install_app', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-    })
-        .then((res) => res.json())
-        .then((data) => alert(data.message))
 })
 
 submitDeviceInfo.addEventListener('click', () => {
@@ -213,9 +287,68 @@ async function setupVideoStream() {
     }
 }
 
+async function getIpks() {
+    try {
+        const response = await fetch('/lg/get_ipks')
+        const data = await response.json()
+        console.log('IPK data:', data)
+
+        const container = document.getElementById('ipkList')
+        container.innerHTML = ''
+
+        if (!data.files || data.files.length === 0) {
+            container.innerHTML = `<p class="text-gray-400">No .ipk files found.</p>`
+            return
+        }
+
+        data.files.forEach((file) => {
+            const card = document.createElement('div')
+            card.className = 'ipk-card'
+
+            const name = document.createElement('p')
+            name.textContent = file.name
+
+            const installButton = document.createElement('button')
+            installButton.textContent = 'Install'
+            installButton.addEventListener('click', async () => {
+                installButton.disabled = true
+                installButton.textContent = 'Running...'
+
+                try {
+                    const res = await fetch('/lg/run_install_app', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ filePath: file.path }),
+                    })
+                    const result = await res.json()
+                    if (res.ok) {
+                        console.log(`Installed: ${file.name}`)
+                    } else {
+                        alert(`Failed: ${result.error}`)
+                    }
+                } catch (err) {
+                    console.log(`Error installing ${file.name}: ${err.message}`)
+                } finally {
+                    installButton.disabled = false
+                    installButton.textContent = 'Install'
+                }
+            })
+
+            card.appendChild(name)
+            card.appendChild(installButton)
+            container.appendChild(card)
+        })
+    } catch (error) {
+        console.error('Error fetching IPK list:', error)
+        const container = document.getElementById('ipkList')
+        container.innerHTML = `<p class="text-red-400">Error loading IPK list.</p>`
+    }
+}
+
 window.addEventListener('load', () => {
     adjustIframeAspectRatio()
     checkConnection()
     getIPLocation()
+    getIpks()
     setupVideoStream()
 })
