@@ -3,21 +3,21 @@ const WebSocket = require('ws')
 const wss = new WebSocket.Server({ noServer: true })
 const wsClients = []
 
-const handleConnection = (ws) => {
+const handleConnection = ws => {
     wsClients.push(ws)
 
     ws.on('close', () => handleDisconnection(ws))
-    ws.on('error', (error) => console.error('WebSocket error:', error))
+    ws.on('error', error => console.error('WebSocket error:', error))
 }
 
-const handleDisconnection = (ws) => {
+const handleDisconnection = ws => {
     const index = wsClients.indexOf(ws)
     if (index !== -1) wsClients.splice(index, 1)
 }
 
 const broadcastLog = (message, type = 'log') => {
     const payload = JSON.stringify({ message, type })
-    wsClients.forEach((ws) => {
+    wsClients.forEach(ws => {
         if (ws.readyState === WebSocket.OPEN) {
             ws.send(payload)
         }

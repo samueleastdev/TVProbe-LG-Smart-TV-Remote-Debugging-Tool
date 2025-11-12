@@ -24,10 +24,21 @@ const openBuildAppBtn = document.getElementById('openBuildAppBtn')
 const closeBuildAppBtn = document.getElementById('closeBuildAppBtn')
 const submitBuildApp = document.getElementById('submitBuildApp')
 
+const menuButton = document.getElementById('menuButton')
+const dropdownMenu = document.getElementById('dropdownMenu')
+
+document.addEventListener('click', e => {
+    if (menuButton.contains(e.target)) {
+        dropdownMenu.classList.toggle('hidden')
+    } else if (!dropdownMenu.contains(e.target)) {
+        dropdownMenu.classList.add('hidden')
+    }
+})
+
 const savedPassphrase = localStorage.getItem('savedPassphrase')
 if (savedPassphrase) passphraseInput.value = savedPassphrase
 
-ws.onmessage = (event) => {
+ws.onmessage = event => {
     const data = JSON.parse(event.data)
 
     if (data.type === 'url') {
@@ -38,8 +49,28 @@ ws.onmessage = (event) => {
 
         const debugUrlAlert = document.getElementById('debugUrlAlert')
         if (debugUrlAlert) {
-            debugUrlAlert.innerHTML = `🧩 <b>Debug Mode Active:</b> <a href="${data.message}" target="_blank" class="underline text-white hover:text-yellow-300">${data.message}</a>. Important please use the correct version of <b>Chromium</b> to debug https://webostv.developer.lge.com/develop/getting-started/app-debugging`
+            debugUrlAlert.innerHTML = `<b>Debug Mode Active:</b>
+        <a href="${data.message}" target="_blank" class="underline text-white hover:text-yellow-300" id="debugUrlText">${data.message}</a>
+        <button id="copyDebugUrlBtn" class="ml-2 px-2 py-1 bg-yellow-500 text-black rounded hover:bg-yellow-400 text-xs">
+            Copy
+        </button>
+        <br>
+        <span class="text-sm text-gray-300">
+            Important: please use the correct version of <b>Chromium</b> to debug:
+            <a href="https://webostv.developer.lge.com/develop/getting-started/app-debugging" target="_blank" class="underline hover:text-yellow-300">
+                WebOS Debugging Guide
+            </a>
+        </span>`
             debugUrlAlert.classList.remove('hidden')
+
+            new ClipboardJS('#copyDebugUrlBtn', {
+                text: () => document.getElementById('debugUrlText')?.textContent || '',
+            }).on('success', e => {
+                const btn = document.getElementById('copyDebugUrlBtn')
+                btn.textContent = 'Copied!'
+                setTimeout(() => (btn.textContent = 'Copy'), 2000)
+                e.clearSelection()
+            })
         }
     }
 
@@ -76,19 +107,16 @@ window.addEventListener('resize', adjustIframeAspectRatio)
 
 function checkConnection() {
     fetch('/device/connected')
-        .then((res) => res.json())
-        .then((data) => {
-            connectionStatus.textContent = data.connected
-                ? data.message
-                : 'Failed'
+        .then(res => res.json())
+        .then(data => {
+            connectionStatus.textContent = data.connected ? data.message : 'Failed'
             connectionStatus.className = `ml-4 px-2 py-1 rounded-full text-sm text-white ${
                 data.connected ? 'bg-green-500' : 'bg-red-500'
             }`
         })
         .catch(() => {
             connectionStatus.textContent = 'Failed'
-            connectionStatus.className =
-                'ml-4 px-2 py-1 bg-red-500 text-white rounded-full text-sm'
+            connectionStatus.className = 'ml-4 px-2 py-1 bg-red-500 text-white rounded-full text-sm'
         })
 }
 
@@ -97,7 +125,7 @@ function sendTvCommand(cmd) {
     fetch(`/keys/down?press=${encodeURIComponent(cmd)}`)
 }
 
-document.querySelectorAll('#remoteContainer .btn').forEach((btn) => {
+document.querySelectorAll('#remoteContainer .btn').forEach(btn => {
     btn.addEventListener('click', () => sendTvCommand(btn.dataset.cmd))
 })
 
@@ -111,7 +139,7 @@ closeSettingsBtn.addEventListener('click', () => {
     settingsModal.classList.remove('flex')
 })
 
-settingsModal.addEventListener('click', (e) => {
+settingsModal.addEventListener('click', e => {
     if (e.target === settingsModal) {
         settingsModal.classList.add('hidden')
         settingsModal.classList.remove('flex')
@@ -125,7 +153,7 @@ openRemoteBtn.addEventListener('click', () => {
 let isDragging = false
 let offsetX, offsetY
 
-remoteContainer.addEventListener('mousedown', (e) => {
+remoteContainer.addEventListener('mousedown', e => {
     if (!e.target.closest('.btn')) {
         isDragging = true
         offsetX = e.clientX - remoteContainer.offsetLeft
@@ -139,7 +167,7 @@ document.addEventListener('mouseup', () => {
     remoteContainer.style.cursor = 'grab'
 })
 
-document.addEventListener('mousemove', (e) => {
+document.addEventListener('mousemove', e => {
     if (isDragging) {
         remoteContainer.style.left = `${e.clientX - offsetX}px`
         remoteContainer.style.top = `${e.clientY - offsetY}px`
@@ -157,7 +185,7 @@ closeBuildAppBtn.addEventListener('click', () => {
     buildAppModal.classList.remove('flex')
 })
 
-buildAppModal.addEventListener('click', (e) => {
+buildAppModal.addEventListener('click', e => {
     if (e.target === buildAppModal) {
         buildAppModal.classList.add('hidden')
         buildAppModal.classList.remove('flex')
@@ -211,12 +239,8 @@ submitBuildApp.addEventListener('click', async () => {
 
         const result = await res.json()
         if (res.ok) {
-            alert(
-                `${
-                    result.message || 'App built successfully!'
-                }\nApp ID: ${appName}`
-            )
-            location.reload()
+            alert(`${result.message || 'App built successfully!'}\nApp ID: ${appName}`)
+            getIpks()
         } else {
             alert(`Failed: ${result.error}`)
         }
@@ -232,14 +256,14 @@ submitBuildApp.addEventListener('click', async () => {
 
 openDevApp.addEventListener('click', () =>
     fetch('/lg/open_dev_app', { method: 'POST' })
-        .then((res) => res.json())
-        .then((data) => alert(data.message))
+        .then(res => res.json())
+        .then(data => alert(data.message)),
 )
 
 stopProcess.addEventListener('click', () =>
     fetch('/lg/stop_process', { method: 'POST' })
-        .then((res) => res.json())
-        .then((data) => alert(data.message))
+        .then(res => res.json())
+        .then(data => alert(data.message)),
 )
 
 submitPassphrase.addEventListener('click', () => {
@@ -261,19 +285,11 @@ submitDeviceInfo.addEventListener('click', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ passphrase: passphraseInput.value }),
     })
-        .then((res) => res.json())
-        .then((data) => {
+        .then(res => res.json())
+        .then(data => {
             if (data.error) alert(`Error: ${data.error}`)
         })
 })
-
-const clipboard = new ClipboardJS('#copyDebugUrlBtn')
-clipboard.on('success', (e) => {
-    copyDebugUrlBtn.textContent = 'Copied!'
-    setTimeout(() => (copyDebugUrlBtn.textContent = 'Copy to Clipboard'), 2000)
-    e.clearSelection()
-})
-clipboard.on('error', () => alert('Failed to copy. Please copy manually.'))
 
 async function setupVideoStream() {
     try {
@@ -302,7 +318,7 @@ async function getIpks() {
             return
         }
 
-        data.files.forEach((file) => {
+        data.files.forEach(file => {
             const card = document.createElement('div')
             card.className = 'ipk-card'
 

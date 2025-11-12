@@ -19,6 +19,7 @@
         "lgtv2": "^1.6.3",
         "open": "^10.1.0",
         "puppeteer-core": "^24.1.1",
+        "sharp": "^0.34.5",
         "ws": "^8.18.0"
     },
     "devDependencies": {

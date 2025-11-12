@@ -47,9 +47,7 @@ const getAppId = async (ipkPath, input = null) => {
             runningProcess = null
 
             if (error) {
-                console.error(
-                    `❌ Error extracting app ID: ${stderr || error.message}`
-                )
+                console.error(`❌ Error extracting app ID: ${stderr || error.message}`)
                 return reject(new Error('Failed to extract app ID'))
             }
 
@@ -85,7 +83,7 @@ const runSSHCommandWithInput = async (command, input = null) => {
 
         let output = ''
 
-        runningProcess.stdout.on('data', (data) => {
+        runningProcess.stdout.on('data', data => {
             let message = data.toString()
             output += message
             console.log(output)
@@ -95,7 +93,7 @@ const runSSHCommandWithInput = async (command, input = null) => {
                 let modelName = ''
                 let updatedOutput = output
 
-                lines.forEach((line) => {
+                lines.forEach(line => {
                     if (line.includes('modelName')) {
                         modelName = line.split(':')[1].trim()
                     }
@@ -115,13 +113,11 @@ const runSSHCommandWithInput = async (command, input = null) => {
             if (message.includes('localhost')) {
                 message = message.replace(/localhost/g, NETWORK.ZEROTIER_IP)
                 const urlMatch = message.match(
-                    /http:\/\/[a-zA-Z0-9.-]+:\d+\/devtools\/inspector\.html\?ws=[^ ]+/
+                    /http:\/\/[a-zA-Z0-9.-]+:\d+\/devtools\/inspector\.html\?ws=[^ ]+/,
                 )
                 if (urlMatch) {
                     latestDebugUrl = urlMatch[0].trim()
-                    broadcastLog(
-                        '✅ Copy & open debug URL in Chromium on your computer'
-                    )
+                    broadcastLog('✅ Copy & open debug URL in Chromium on your computer')
                     broadcastLog(latestDebugUrl, 'url')
                 }
             }
@@ -134,26 +130,21 @@ const runSSHCommandWithInput = async (command, input = null) => {
                     try {
                         runningProcess.stdin.write(`${input}\n`)
                     } catch (err) {
-                        console.error(
-                            '[SSH Service] Failed to write passphrase:',
-                            err
-                        )
+                        console.error('[SSH Service] Failed to write passphrase:', err)
                     }
                 } else {
-                    console.warn(
-                        '[SSH Service] Cannot send passphrase, process not running.'
-                    )
+                    console.warn('[SSH Service] Cannot send passphrase, process not running.')
                 }
             }
         })
 
-        runningProcess.stderr.on('data', (data) => {
+        runningProcess.stderr.on('data', data => {
             const error = data.toString().trim()
             console.error(error)
             broadcastLog(`Error: ${error}`)
         })
 
-        runningProcess.on('close', (code) => {
+        runningProcess.on('close', code => {
             const finalMessage = `Command "${command}" finished with code ${code}`
             console.log(finalMessage)
             runningProcess = null
@@ -161,7 +152,7 @@ const runSSHCommandWithInput = async (command, input = null) => {
             resolve(output.trim())
         })
 
-        runningProcess.on('error', (error) => {
+        runningProcess.on('error', error => {
             console.log('[ERROR]', error)
             runningProcess = null
             latestDebugUrl = null
@@ -181,7 +172,7 @@ const stopProcess = (req, res) => {
     }
 }
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 module.exports = {
     checkConnection,

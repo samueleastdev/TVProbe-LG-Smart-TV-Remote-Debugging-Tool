@@ -4,50 +4,84 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="icon" href="/favicon.ico" />
+        <script src="https://cdn.tailwindcss.com"></script>
         <link href="/styles.css" rel="stylesheet" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.10/clipboard.min.js"></script>
         <script src="/script.js" defer></script>
-        <title>LG Remote Debugger</title>
+        <title>TV Probe</title>
     </head>
     <body class="bg-gray-900 text-white">
+        <aside
+            class="bg-gray-800 w-56 min-h-screen flex flex-col justify-between shadow-lg fixed left-0 top-0"
+        >
+            <div>
+                <div class="text-2xl font-bold p-4 border-b border-gray-700">TV Probe</div>
+
+                <div class="flex flex-col p-2 space-y-2">
+                    <button
+                        id="openRemoteBtn"
+                        class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-left text-sm"
+                    >
+                        📺 TV Remote
+                    </button>
+
+                    <button
+                        id="openSettingsBtn"
+                        class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-left text-sm"
+                    >
+                        ⚙️ Settings
+                    </button>
+
+                    <button
+                        id="openBuildAppBtn"
+                        class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded text-left text-sm"
+                    >
+                        🧩 Build App
+                    </button>
+                </div>
+            </div>
+        </aside>
         <nav class="bg-gray-800 p-4 flex justify-between items-center">
-            <div class="text-xl font-bold">LG Remote Debugger</div>
-            <div class="flex items-center gap-4">
+            <div class="text-xl font-bold">TV Probe - LG</div>
+
+            <div class="flex items-center gap-4 relative">
                 <span
                     id="connectionStatus"
                     class="px-3 py-1 rounded-full text-sm bg-gray-700"
                 ></span>
-                <button
-                    class="bg-grey-600 hover:bg-grey-700 px-3 py-1 rounded-md text-sm"
-                    onclick="window.open('https://www.zerotier.com/', '_blank')"
-                >
-                    Open Zerotier
-                </button>
-                <button
-                    id="openRemoteBtn"
-                    class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-sm"
-                >
-                    TV Remote
-                </button>
-                <button
-                    id="openSettingsBtn"
-                    class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded-md text-sm"
-                >
-                    Settings
-                </button>
-                <button
-                    id="openBuildAppBtn"
-                    class="bg-yellow-600 hover:bg-yellow-700 px-3 py-1 rounded-md text-sm"
-                >
-                    Build App
-                </button>
+
+                <div class="relative">
+                    <button
+                        id="menuButton"
+                        class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded-md text-sm flex items-center gap-1"
+                    >
+                        Helpful Links ▾
+                    </button>
+
+                    <div
+                        id="dropdownMenu"
+                        class="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-md shadow-lg hidden z-50"
+                    >
+                        <a
+                            href="https://www.zerotier.com/"
+                            target="_blank"
+                            class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-yellow-300"
+                        >
+                            Open Zerotier
+                        </a>
+                        <a
+                            href="https://webostv.developer.lge.com/develop/tools/resource-monitor-installation"
+                            target="_blank"
+                            class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-yellow-300"
+                        >
+                            LG Resource Monitor Installation
+                        </a>
+                    </div>
+                </div>
             </div>
         </nav>
 
-        <div
-            id="locationAlert"
-            class="hidden bg-blue-500 text-white p-4 text-center"
-        ></div>
+        <div id="locationAlert" class="hidden bg-blue-500 text-white p-4 text-center"></div>
 
         <div class="container-fluid mx-auto mt-4 p-4">
             <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
@@ -140,37 +174,23 @@
 
         <div id="settingsModal" class="modal hidden">
             <div class="modal-box settings-box">
-                <button id="closeSettingsBtn" class="modal-close-text">
-                    Close
-                </button>
+                <button id="closeSettingsBtn" class="modal-close-text">Close</button>
                 <h2 class="modal-title">Device Settings</h2>
 
                 <div class="form-section">
                     <label for="passphrase">Passphrase</label>
                     <div class="input-group">
-                        <input
-                            id="passphrase"
-                            type="text"
-                            placeholder="Enter your passphrase"
-                        />
-                        <button id="submitPassphrase" class="btn-primary">
-                            Submit
-                        </button>
+                        <input id="passphrase" type="text" placeholder="Enter your passphrase" />
+                        <button id="submitPassphrase" class="btn-primary">Submit</button>
                     </div>
                 </div>
 
                 <div class="form-section">
                     <h3 class="section-title">Device Actions</h3>
                     <div class="button-row">
-                        <button id="openDevApp" class="btn-success">
-                            Open Dev App
-                        </button>
-                        <button id="submitDeviceInfo" class="btn-primary">
-                            Show Info
-                        </button>
-                        <button id="stopProcess" class="btn-danger">
-                            Stop Process
-                        </button>
+                        <button id="openDevApp" class="btn-success">Open Dev App</button>
+                        <button id="submitDeviceInfo" class="btn-primary">Show Info</button>
+                        <button id="stopProcess" class="btn-danger">Stop Process</button>
                     </div>
                 </div>
             </div>
@@ -178,37 +198,25 @@
 
         <div id="buildAppModal" class="modal hidden">
             <div class="modal-box settings-box">
-                <button id="closeBuildAppBtn" class="modal-close-text">
-                    Close
-                </button>
+                <button id="closeBuildAppBtn" class="modal-close-text">Close</button>
                 <h2 class="modal-title">Build New App</h2>
 
                 <div class="form-section">
                     <label for="buildAppName">App Name</label>
                     <div class="input-group">
-                        <input
-                            id="buildAppName"
-                            type="text"
-                            placeholder="Enter app name"
-                        />
+                        <input id="buildAppName" type="text" placeholder="Enter app name" />
                     </div>
                 </div>
 
                 <div class="form-section">
                     <label for="buildAppUrl">App Build URL</label>
                     <div class="input-group">
-                        <input
-                            id="buildAppUrl"
-                            type="text"
-                            placeholder="Enter app build URL"
-                        />
+                        <input id="buildAppUrl" type="text" placeholder="Enter app build URL" />
                     </div>
                 </div>
 
                 <div class="form-section">
-                    <button id="submitBuildApp" class="btn-primary w-full">
-                        Submit Build
-                    </button>
+                    <button id="submitBuildApp" class="btn-primary w-full">Submit Build</button>
                 </div>
             </div>
         </div>

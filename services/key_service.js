@@ -8,17 +8,13 @@ async function handleKeyPress(cmd) {
     }
 
     if (cmd === 'HOME') {
-        lgtv.request(
-            'ssap://system.launcher/launch',
-            { id: 'com.webos.app.home' },
-            (err, res) => {
-                if (err) {
-                    console.error('Error opening home screen:', err)
-                } else {
-                    console.log('Home screen opened:', res)
-                }
+        lgtv.request('ssap://system.launcher/launch', { id: 'com.webos.app.home' }, (err, res) => {
+            if (err) {
+                console.error('Error opening home screen:', err)
+            } else {
+                console.log('Home screen opened:', res)
             }
-        )
+        })
         return true
     }
 

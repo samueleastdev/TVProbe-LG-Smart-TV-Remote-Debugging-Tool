@@ -4,11 +4,12 @@ const { broadcastLog } = require('./websocket_service.js')
 const { sendButton } = require('../utils/helpers')
 const fs = require('fs').promises
 const path = require('path')
+const sharp = require('sharp')
 
 const { LG } = require('../utils/config')
 let passphrase = null
 
-async function runDevApp(req, res) {
+async function launchDevApp(req, res) {
     const passphraseInput = req.body.passphrase
     if (!passphraseInput) {
         return res.status(400).json({ error: 'Passphrase is required' })
@@ -41,36 +42,29 @@ async function runDevApp(req, res) {
         broadcastLogs(`📡 Adding webOS TV device ${LG.IP}...`)
 
         await runSSHCommandWithInput(
-            `ares-setup-device --add ${LG.DEVICE_NAME} --info "{'host':'${LG.IP}', 'port':'6633', 'username':'prisoner', 'privatekey':'ssh', 'default':true}"`
+            `ares-setup-device --add ${LG.DEVICE_NAME} --info "{'host':'${LG.IP}', 'port':'6633', 'username':'prisoner', 'privatekey':'ssh', 'default':true}"`,
         )
 
         broadcastLogs('🔑 Retrieving SSH key from webOS TV...')
 
-        await runSSHCommandWithInput(
-            `ares-novacom --device ${LG.DEVICE_NAME} --getkey`,
-            passphrase
-        )
+        await runSSHCommandWithInput(`ares-novacom --device ${LG.DEVICE_NAME} --getkey`, passphrase)
 
         broadcastLogs(`📦 Installing the app ${LG.APP_FILE}...`)
 
         await runSSHCommandWithInput(
             `ares-install --device ${LG.DEVICE_NAME} '${path.resolve(
                 __dirname,
-                `../tvapp/${LG.APP_FILE}`
-            )}'`
+                `../tvapp/${LG.APP_FILE}`,
+            )}'`,
         )
 
         broadcastLogs('🔍 Starting app inspection...')
 
         await delay(2000)
 
-        broadcastLogs(
-            '✅ Finished to debug copy and paste this url into Chromium...'
-        )
+        broadcastLogs('✅ Finished to debug copy and paste this url into Chromium...')
 
-        await runSSHCommandWithInput(
-            `ares-inspect --device ${LG.DEVICE_NAME} '${LG.APP_ID}'`
-        )
+        await runSSHCommandWithInput(`ares-inspect --device ${LG.DEVICE_NAME} '${LG.APP_ID}'`)
         res.status(200).json({
             message: 'Passphrase saved and command executed successfully',
         })
@@ -117,18 +111,51 @@ async function updateIndexHtml(newUrl, newAppId = null) {
         appInfo.id = newAppId
         appInfo.title = newAppId
 
-        await fs.writeFile(
-            appInfoPath,
-            JSON.stringify(appInfo, null, 2),
-            'utf-8'
-        )
+        await fs.writeFile(appInfoPath, JSON.stringify(appInfo, null, 2), 'utf-8')
+
+        updateLargeIconWithText(newAppId)
     } catch (error) {
         console.error('❌ Error updating files:', error)
         throw error
     }
 }
 
-async function runCreateDebugApp(req, res) {
+async function updateLargeIconWithText(newAppId) {
+    const defaultIconPath = path.resolve(__dirname, '../tvapp/defaultIcon.png')
+    const largeIconPath = path.resolve(__dirname, '../tvapp/largeIcon.png')
+    const tempPath = largeIconPath.replace('.png', '_temp.png')
+
+    try {
+        const image = sharp(defaultIconPath)
+        const metadata = await image.metadata()
+
+        const svgOverlay = Buffer.from(
+            `<svg width="${metadata.width}" height="${
+                metadata.height
+            }" xmlns="http://www.w3.org/2000/svg">
+                <rect width="100%" height="100%" fill="rgba(0,0,0,0.4)" />
+                <text x="50%" y="55%" font-size="100" text-anchor="middle" fill="white" font-family="Arial Black, Arial, sans-serif">
+                <tspan textLength="${
+                    metadata.width * 0.95
+                }" lengthAdjust="spacingAndGlyphs">${newAppId}</tspan>
+                </text>
+            </svg>`,
+        )
+
+        await image.composite([{ input: svgOverlay }]).toFile(tempPath)
+
+        await fs.rename(tempPath, largeIconPath)
+
+        console.log(`[Success] Created largeIcon.png with ID text: ${newAppId}`)
+    } catch (err) {
+        console.warn('Could not update largeIcon.png:', err.message)
+        try {
+            await fs.unlink(tempPath)
+        } catch {}
+    }
+}
+
+async function createDebugBuild(req, res) {
     const url = req.body.url
     if (!url) {
         return res.status(400).json({ error: 'Passphrase is required' })
@@ -159,28 +186,20 @@ async function runCreateDebugApp(req, res) {
     }
 }
 
-async function runInstallApp(req, res) {
+async function installAppOnDevice(req, res) {
     const filePath = req.body.filePath
     if (!filePath) {
         return res.status(400).json({ error: 'File path is required' })
     }
 
     try {
-        console.log('Installing app from:', filePath)
-
         broadcastLog(`📦 Packaging app in ${filePath}`)
 
-        await runSSHCommandWithInput(
-            `ares-install --device ${LG.DEVICE_NAME} '${filePath}'`
-        )
+        await runSSHCommandWithInput(`ares-install --device ${LG.DEVICE_NAME} '${filePath}'`)
 
         const id = await getAppId(filePath)
 
-        console.log('Installed app ID:', id)
-
-        await runSSHCommandWithInput(
-            `ares-inspect --device ${LG.DEVICE_NAME} '${id}'`
-        )
+        await runSSHCommandWithInput(`ares-inspect --device ${LG.DEVICE_NAME} '${id}'`)
 
         res.status(200).json({
             message: `App packaged successfully, you can now run it below. ${id}`,
@@ -193,7 +212,7 @@ async function runInstallApp(req, res) {
     }
 }
 
-const openDevApp = async (req, res) => {
+const openDeveloperApp = async (req, res) => {
     try {
         broadcastLogs('Opening developer mode app on device...')
         lgtv.request('ssap://system.launcher/launch', { id: LG.DEV_APP_ID })
@@ -205,73 +224,7 @@ const openDevApp = async (req, res) => {
     }
 }
 
-const parseDeviceStats = (output) => {
-    const lines = output.split('\n')
-    let stats = {
-        timestamp: new Date().toISOString(),
-        cpu: [],
-        memory: {},
-    }
-
-    let isCpuSection = false
-    let isMemorySection = false
-
-    for (let line of lines) {
-        line = line.trim()
-
-        if (line.includes('(%)   overall')) {
-            isCpuSection = true
-            isMemorySection = false
-            continue
-        } else if (line.includes('(KB)    total')) {
-            isCpuSection = false
-            isMemorySection = true
-            continue
-        }
-
-        if (isCpuSection && line.startsWith('cpu')) {
-            const parts = line.split(/\s+/)
-            stats.cpu.push({
-                id: parts[0],
-                overall: parseFloat(parts[1]),
-                usermode: parseFloat(parts[2]),
-                kernelmode: parseFloat(parts[3]),
-                others: parseFloat(parts[4]),
-            })
-        }
-
-        if (isMemorySection && line.startsWith('memory')) {
-            const parts = line.split(/\s+/)
-            stats.memory = {
-                total: parseInt(parts[1], 10),
-                used: parseInt(parts[2], 10),
-                free: parseInt(parts[3], 10),
-                shared: parseInt(parts[4], 10),
-                buff_cache: parseInt(parts[5], 10),
-                available: parseInt(parts[6], 10),
-            }
-        }
-    }
-
-    return stats
-}
-
-const getDeviceStats = async (req, res) => {
-    try {
-        const output = await runSSHCommandWithInput(
-            `ares-device -d ${LG.DEVICE_NAME} -r`
-        )
-        const parsedData = parseDeviceStats(output)
-        res.status(200).json(parsedData)
-    } catch (error) {
-        console.error(`Error executing command: ${error.message}`)
-        res.status(500).json({
-            error: `Failed to execute command: ${error.message}`,
-        })
-    }
-}
-
-const getDeviceInfo = async (req, res) => {
+const fetchDeviceInfo = async (req, res) => {
     try {
         broadcastLog('Fetching device info...')
         await runSSHCommandWithInput(`ares-device -i -d ${LG.DEVICE_NAME}`)
@@ -283,22 +236,20 @@ const getDeviceInfo = async (req, res) => {
     }
 }
 
-const getIpkList = async (req, res) => {
+const listAvailableIpks = async (req, res) => {
     try {
         const ipksFolder = path.resolve(__dirname, '../tvapp')
         const files = await fs.readdir(ipksFolder)
 
         const ipkFiles = files
-            .filter((file) => file.endsWith('.ipk'))
-            .map((file) => ({
+            .filter(file => file.endsWith('.ipk'))
+            .map(file => ({
                 name: file,
                 path: path.join(ipksFolder, file),
             }))
 
         if (ipkFiles.length === 0) {
-            return res
-                .status(404)
-                .json({ message: 'No .ipk files found in /ipks folder.' })
+            return res.status(404).json({ message: 'No .ipk files found in /ipks folder.' })
         }
 
         res.status(200).json({
@@ -314,11 +265,10 @@ const getIpkList = async (req, res) => {
 }
 
 module.exports = {
-    runDevApp,
-    runCreateDebugApp,
-    runInstallApp,
-    openDevApp,
-    getDeviceStats,
-    getIpkList,
-    getDeviceInfo,
+    launchDevApp,
+    createDebugBuild,
+    installAppOnDevice,
+    openDeveloperApp,
+    listAvailableIpks,
+    fetchDeviceInfo,
 }
