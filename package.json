@@ -18,8 +18,10 @@
         "express": "^4.19.2",
         "lgtv2": "^1.6.3",
         "open": "^10.1.0",
+        "ping": "^1.0.0",
         "puppeteer-core": "^24.1.1",
         "sharp": "^0.34.5",
+        "wake_on_lan": "^1.0.0",
         "ws": "^8.18.0"
     },
     "devDependencies": {
