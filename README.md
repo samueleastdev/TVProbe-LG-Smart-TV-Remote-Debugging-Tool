@@ -1,6 +1,6 @@
 # TVProbe – Smart TV Remote Debugging
 
-![TVProbe Logo](https://s3.us-east-1.amazonaws.com/s3b-delivery-bucket/screenshot_2025_11_01_at_12.41.08.png)
+![TVProbe Logo](https://s3.us-east-1.amazonaws.com/s3b-delivery-bucket/screenshot_2025_11_17_at_11.28.06.png)
 
 TVProbe allows developers to remotely debug and control Smart TVs (LG, Samsung, etc.) through a secure Zerotier network. It includes webcam integration via MediaMTX and remote control functionality for development and testing.
 
