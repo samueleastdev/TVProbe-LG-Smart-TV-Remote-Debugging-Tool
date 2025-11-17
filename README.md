@@ -50,6 +50,8 @@ ares-package --help
 
 ## Setting Up Zerotier
 
+![Zerotier Info](https://s3.us-east-1.amazonaws.com/s3b-delivery-bucket/zerotier.png)
+
 1. Go to [zerotier.com](https://www.zerotier.com) and create a free account.  
    You can add up to 10 devices on the free plan.  
    Note down your **Network ID**, which you’ll share with others who need to connect.
